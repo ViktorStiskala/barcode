@@ -2,4 +2,4 @@ __pycache__
 .idea/
 ._.
 *.mp3
-./reader.conf
+reader.conf
