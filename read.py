@@ -22,7 +22,7 @@ try:
             dev = InputDevice(conf['input_device'])
         except OSError:
             logging.info("Waiting for device to become ready")
-            time.sleep(1)
+            time.sleep(conf['sleep_time'])
             continue
 
         dev.grab()
