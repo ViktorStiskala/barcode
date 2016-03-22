@@ -3,3 +3,4 @@ __pycache__
 ._.
 *.mp3
 reader.conf
+*.db
