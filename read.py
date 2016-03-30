@@ -1,11 +1,13 @@
+import configparser
+import logging
+import os
+import sys
+import time
+
 from evdev import ecodes
 from evdev.device import InputDevice
+
 import barcode
-import os
-import time
-import logging
-import configparser
-import sys
 
 config_file = os.path.join(os.path.dirname(__file__), 'reader.conf')
 config = configparser.ConfigParser()
@@ -14,8 +16,8 @@ config.read(config_file)
 try:
     conf = config['DEFAULT']
 
-    logging.basicConfig(filename=conf['logfile'], level=logging.DEBUG,format='%(asctime)s %(levelname)s %(name)s: %(message)s')
-    barcode_reader = barcode.WebReader(conf['api_url'])
+    logging.basicConfig(filename=conf['logfile'], level=logging.DEBUG, format='%(asctime)s %(levelname)s %(name)s: %(message)s')
+    barcode_reader = barcode.WebReader(conf['api_url'], conf['sqlite_path'])
 
     while True:
         try:
@@ -39,4 +41,3 @@ try:
 except KeyError:
     sys.stderr.write('Invalid config file\n')
     sys.exit(1)
-

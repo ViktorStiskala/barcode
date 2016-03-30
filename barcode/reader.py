@@ -1,12 +1,16 @@
+import logging
+import re
+import sqlite3
+import uuid
 from datetime import datetime, timedelta
 from threading import Thread
-import re
-from urllib.request import Request, urlopen
-from urllib.parse import urlencode
 from urllib.error import HTTPError
-from .codes import mapping, shift_mapping
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
+
 from evdev.events import KeyEvent
-import logging
+
+from .codes import mapping, shift_mapping
 
 
 class Reader:
@@ -60,10 +64,11 @@ class Reader:
 
 class CodeSender(Thread):
     def run(self):
-        modifier, code = self._args
+        modifier, code, transaction_uid = self._args
         data = {
             'code': code,
-            'modifier': modifier if modifier is not None else b''
+            'modifier': modifier if modifier is not None else b'',
+            'uid': transaction_uid,
         }
 
         r = Request(self._kwargs['api_url'], urlencode(data).encode('utf-8'))
@@ -76,11 +81,16 @@ class CodeSender(Thread):
 class WebReader(Reader):
     re_modifier = re.compile(r'USER\d{6}|INVENTORY')
 
-    def __init__(self, api_url):
+    def __init__(self, api_url, sqlite_path):
         super().__init__()
         self._modifier = None
         self._last_activity = None
         self.api_url = api_url
+        self.con = sqlite3.connect(sqlite_path)
+        with self.con:
+            self.con.execute(
+                'CREATE TABLE IF NOT EXISTS request_log'
+                '(uid VARCHAR PRIMARY KEY, modifier VARCHAR, code VARCHAR, date_created timestamp)')
 
     def _set_modifier(self, modifier):
         self._modifier = modifier
@@ -92,7 +102,17 @@ class WebReader(Reader):
 
     def send_code(self, code):
         modifier = self.get_modifier()
-        CodeSender(args=(modifier, code), kwargs={'api_url': self.api_url}).start()
+        transaction_uid = uuid.uuid4()
+        self.write_log(modifier, code, transaction_uid)
+        CodeSender(args=(modifier, code, transaction_uid), kwargs={'api_url': self.api_url}).start()
+
+    def write_log(self, modifier, code, transaction_uid):
+        with self.con:
+            now = datetime.now()
+            self.con.execute(
+                "INSERT INTO request_log (uid, modifier, code, date_created) VALUES (?, ?, ?, ?)",
+                (str(transaction_uid), modifier, code, now)
+            )
 
     def code_complete(self):
         logging.debug('code_complete: %s', self._code)
