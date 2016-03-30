@@ -3,7 +3,8 @@ Simple barcode reader – script reading barcode scanner input.
 
 Reads barcodes (EAN13, EAN8, etc.) and modifier codes (`USER\d{6}|INVENTORY`) and sends them to web API endpoint.
 
-`resender.py` should be run by cron. You can set your resend interval in `reader.conf` file.
+`resender.py` is intended to be run by cron job. How many hours into the past should be sent each time you run the script
+can be configured in `reader.conf` file (`resend_interval`).
 
 ## Configuration
 Create file `reader.conf` in the same directory as `read.py` with the following contents:
