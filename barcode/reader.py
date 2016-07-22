@@ -96,9 +96,7 @@ class WebReader(Reader):
         self._modifier = modifier
 
     def get_modifier(self):
-        if self._last_activity is not None and (datetime.now() - self._last_activity) < timedelta(minutes=3):
-            return self._modifier
-        return None
+        return self._modifier
 
     def send_code(self, code):
         modifier = self.get_modifier()
